@@ -271,6 +271,11 @@ module Api
         include Hanami::Helpers
         include Api::Assets::Helpers
       end
+
+      # Configure default request and response
+      default_request_format :json
+      default_response_format :json
+      body_parsers :json
     end
 
     ##
