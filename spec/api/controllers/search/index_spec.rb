@@ -1,11 +1,23 @@
-require_relative '../../../spec_helper'
+require 'api_helper'
+require 'json'
 
-describe Api::Controllers::Search::Index do
-  let(:action) { Api::Controllers::Search::Index.new }
-  let(:params) { Hash[] }
+describe 'GET /search' do
+  params = '{"checkin":"in","checkout":"out","destination":"destination","guest":"guest"}'
 
-  it 'is successful' do
-    response = action.call(params)
-    response[0].must_equal 200
+  describe 'when given valid parameters' do
+    it 'should be successful' do
+      header 'Content-Type', 'application/json'
+      post '/search', params
+
+      expect(last_response).must_be :ok?
+      expect(last_response.content_type).must_include 'application/json'
+    end
+
+    it 'should be empty by default' do
+      header 'Content-Type', 'application/json'
+      post '/search', params
+
+      expect(last_response.body).must_equal '[]'
+    end
   end
 end
