@@ -1,8 +1,20 @@
 # Search
 
-Welcome to your new Hanami project!
+A simple search API built using Hanami framework and Ruby
+
+## Requirements
+
+- ruby 2.4.0
+- hanami 1.1.0
+- redis 4.0.1
 
 ## Setup
+
+Assuming you have Redis already installed, make sure it's running at PORT 6379
+
+```
+% redis-server --port=6379
+```
 
 How to run tests:
 
