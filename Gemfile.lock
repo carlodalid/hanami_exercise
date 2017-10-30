@@ -109,11 +109,13 @@ GEM
     minitest (5.10.3)
     nokogiri (1.8.1)
       mini_portile2 (~> 2.3.0)
+    oj (3.3.9)
     public_suffix (3.0.0)
     rack (2.0.3)
     rack-test (0.7.0)
       rack (>= 1.0, < 3)
     rake (12.2.1)
+    redis (4.0.1)
     rom (3.3.3)
       concurrent-ruby (~> 1.0)
       dry-core (~> 0.3)
@@ -156,7 +158,9 @@ DEPENDENCIES
   hanami (~> 1.1)
   hanami-model (~> 1.1)
   minitest
+  oj (~> 3.3.9)
   rake
+  redis (~> 4.0.1)
   shotgun
   sqlite3
 
