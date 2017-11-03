@@ -7,8 +7,7 @@ module Api::Controllers::Search
     include CacheHelper
 
     before do
-      @cache_field = 'results'.freeze
-      @redis       = Redis.new(:host => ENV['REDIS_HOST'], :port => ENV['REDIS_PORT'])
+      @redis = Redis.new(:host => ENV['REDIS_HOST'], :port => ENV['REDIS_PORT'])
     end
 
     SUPPLIERS = {
@@ -27,18 +26,32 @@ module Api::Controllers::Search
 
     def call(params)
       if params.valid?
-        cache_key = generate_cache_key(params)
-        results   = fetch_from_cache(cache_key)
+        suppliers = params[:suppliers].split(',') rescue [ ]
+        cache_key = generate_cache_key(params).freeze
+
+        cache_field = suppliers.empty? ? 'all' : suppliers.join('/')
+        results = Oj.load(fetch_from_cache(cache_key, cache_field)) rescue nil
 
         if results.nil?
-          supp_param = params[:suppliers].split(',') rescue [ ]
-          suppliers  = supp_param.empty? ? SUPPLIERS.keys : supp_param
-          results = fetch_from_suppliers(suppliers).sort_by { |r| r['price'] }
+          entries = [ ]
+          supp_array = suppliers.empty? ? SUPPLIERS.keys : suppliers
 
-          results = Oj.dump(results)
-          cache_result(cache_key, results)
+          supp_array.each do |supp|
+            supp_result = Oj.load(fetch_from_cache(cache_key, supp)) rescue nil
+
+            if supp_result.nil?
+              supp_result = fetch_from_supplier(supp)
+            end
+
+            entries += supp_result
+            cache_result(cache_key, supp, Oj.dump(supp_result))
+          end
+
+          results = merge_entries(entries)
         end
 
+        results = Oj.dump(results.sort_by { |r| r['price'] })
+        cache_result(cache_key, cache_field, results)
         status 200, results
       else
         status 402, 'Bad Request'
@@ -47,23 +60,24 @@ module Api::Controllers::Search
 
     private
 
-    def fetch_from_suppliers(suppliers)
-      results = [ ]
+    def fetch_from_supplier(supplier)
       entries = [ ]
-
-      suppliers.each do |supp|
-        temp = Oj.load(open(SUPPLIERS[supp]).read) rescue { }
-        temp.each do |key, _|
-          entries << { 'id' => key, 'price' => _, 'supplier' => supp }
-        end
+      temp = Oj.load(open(SUPPLIERS[supplier]).read) rescue { }
+      temp.each do |key, _|
+        entries << { 'id' => key, 'price' => _, 'supplier' => supplier }
       end
 
+      entries
+    end
+
+    def merge_entries(entries)
+      response = [ ]
       entries.group_by { |s| s['id'] }
-        .each do |supp, entries|
-        results << entries.sort_by { |e| e['price'] }.first
+        .each do |supp, entry|
+        response << entry.sort_by { |e| e['price'] }.first
       end
 
-      results
+      response
     end
   end
 end
