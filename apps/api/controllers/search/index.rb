@@ -29,7 +29,7 @@ module Api::Controllers::Search
         suppliers = params[:suppliers].split(',') rescue [ ]
         cache_key = generate_cache_key(params).freeze
 
-        cache_field = suppliers.empty? ? 'all' : suppliers.join('/')
+        cache_field = suppliers.empty? ? 'all' : suppliers.sort.join('/')
         results = Oj.load(fetch_from_cache(cache_key, cache_field)) rescue nil
 
         if results.nil?
