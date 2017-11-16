@@ -37,11 +37,7 @@ module Api::Controllers::Search
           supp_array = suppliers.empty? ? SUPPLIERS.keys : suppliers
 
           supp_array.each do |supp|
-            supp_result = Oj.load(fetch_from_cache(cache_key, supp)) rescue nil
-
-            if supp_result.nil?
-              supp_result = fetch_from_supplier(supp)
-            end
+            supp_result = Oj.load(fetch_from_cache(cache_key, supp) || fetch_from_supplier(supp))
 
             entries += supp_result
             cache_result(cache_key, supp, Oj.dump(supp_result))
@@ -61,23 +57,15 @@ module Api::Controllers::Search
     private
 
     def fetch_from_supplier(supplier)
-      entries = [ ]
       temp = Oj.load(open(SUPPLIERS[supplier]).read) rescue { }
-      temp.each do |key, _|
-        entries << { 'id' => key, 'price' => _, 'supplier' => supplier }
-      end
-
-      entries
+      Oj.dump(temp.map { |key, _| { 'id' => key, 'price' => _, 'supplier' => supplier } })
     end
 
     def merge_entries(entries)
-      response = [ ]
       entries.group_by { |s| s['id'] }
-        .each do |supp, entry|
-        response << entry.sort_by { |e| e['price'] }.first
+        .map do |supp, entry|
+          entry.sort_by { |e| e['price'] }.first
       end
-
-      response
     end
   end
 end
